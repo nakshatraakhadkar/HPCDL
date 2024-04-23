@@ -1,0 +1,69 @@
+#include <iostream>
+#include <vector>
+#include <omp.h>
+#include <algorithm>
+
+using namespace std;
+
+// Structure to represent a graph edge
+struct Edge {
+    int src, dest;
+};
+
+// Structure to represent a graph
+class Graph {
+public:
+    vector<vector<int>> adjList;
+
+    // Constructor
+    Graph(vector<Edge> const &edges, int N) {
+        adjList.resize(N);
+
+        for (auto &edge : edges) {
+            adjList[edge.src].push_back(edge.dest);
+        }
+    }
+};
+
+// Depth-first search
+void DFSUtil(const Graph& graph, int v, vector<bool>& visited, vector<int>& result) {
+    visited[v] = true;
+    result.push_back(v);
+
+    // Traverse all adjacent vertices
+    for (int u : graph.adjList[v]) {
+        if (!visited[u])
+            DFSUtil(graph, u, visited, result);
+    }
+}
+
+// Parallel depth-first search
+void parallelDFS(const Graph& graph, vector<int>& result) {
+    int V = graph.adjList.size();
+    vector<bool> visited(V, false);
+
+    // Traverse all vertices
+    #pragma omp parallel for
+    for (int v = 0; v < V; ++v) {
+        if (!visited[v])
+            DFSUtil(graph, v, visited, result);
+    }
+}
+
+int main() {
+    // Example graph
+    vector<Edge> edges = {{0, 1}, {0, 2}, {1, 3}, {1, 4}, {2, 5}, {2, 6}};
+    int numVertices = 7;
+    Graph graph(edges, numVertices);
+
+    cout << "Parallel DFS traversal (sorted): ";
+    vector<int> result;
+    parallelDFS(graph, result);
+    sort(result.begin(), result.end());
+    for (int v : result) {
+        cout << v << " ";
+    }
+    cout << endl;
+
+    return 0;
+}
