@@ -1,0 +1,58 @@
+#include <iostream>
+#include <queue>
+#include <vector>
+#include <omp.h>
+using namespace std;
+// Structure to represent a graph edge
+struct Edge {
+ int src, dest;
+};
+// Structure to represent a graph
+class Graph {
+public:
+ vector<vector<int>> adjList;
+ // Constructor
+ Graph(vector<Edge> const &edges, int N) {
+ adjList.resize(N);
+ for (auto &edge : edges) {
+ adjList[edge.src].push_back(edge.dest);
+ }
+ }
+};
+// Parallel breadth-first search
+void parallelBFS(Graph const &graph, int source) {
+ int numVertices = graph.adjList.size();
+ vector<bool> visited(numVertices, false);
+ queue<int> q;
+// Start BFS from the source node
+ q.push(source);
+ visited[source] = true;
+while (!q.empty()) {
+ #pragma omp parallel
+ {
+ #pragma omp for
+ for (int i = 0; i < q.size(); ++i) {
+ int u = q.front();
+ q.pop();
+ cout << u << " ";
+ // Visit all the adjacent vertices of u
+ for (int v : graph.adjList[u]) {
+ if (!visited[v]) {
+ visited[v] = true;
+ q.push(v);
+ }
+ }
+ }
+ }
+ }
+}
+int main() {
+ // Example graph
+ vector<Edge> edges = {{0, 1}, {0, 2}, {1, 3}, {1, 4}, {2, 5}, {2, 6}};
+ int numVertices = 7;
+ Graph graph(edges, numVertices);
+ cout << "Parallel BFS traversal starting from vertex 0: ";
+ parallelBFS(graph, 0);
+ cout << endl;
+return 0;
+}
