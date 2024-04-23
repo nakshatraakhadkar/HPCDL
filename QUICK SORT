@@ -1,0 +1,58 @@
+#include <iostream>
+#include <vector>
+#include <omp.h>
+using namespace std;
+// Partition function for quicksort
+int partition(vector<int>& arr, int low, int high) {
+ int pivot = arr[high];
+ int i = low - 1;
+ for (int j = low; j < high; j++) {
+ if (arr[j] < pivot) {
+ i++;
+ swap(arr[i], arr[j]);
+ }
+ }
+ swap(arr[i + 1], arr[high]);
+ return i + 1;
+}
+// Quicksort function
+void quickSort(vector<int>& arr, int low, int high) {
+ if (low < high) {
+ int pi = partition(arr, low, high);
+ 
+ #pragma omp parallel sections
+ {
+ #pragma omp section
+ quickSort(arr, low, pi - 1);
+ 
+ #pragma omp section
+ quickSort(arr, pi + 1, high);
+ }
+ }
+}
+// Parallel quicksort function
+void parallelQuickSort(vector<int>& arr) {
+ int n = arr.size();
+ #pragma omp parallel
+ {
+ #pragma omp single nowait
+ quickSort(arr, 0, n - 1);
+ }
+}
+int main() {
+ // Example array
+ vector<int> arr = {64, 34, 25, 12, 22, 11, 90};
+ cout << "Original array: ";
+ for (int num : arr) {
+ cout << num << " ";
+ }
+ cout << endl;
+ // Perform parallel quicksort
+ parallelQuickSort(arr);
+ cout << "Sorted array: ";
+ for (int num : arr) {
+ cout << num << " ";
+ }
+ cout << endl;
+ return 0;
+}
